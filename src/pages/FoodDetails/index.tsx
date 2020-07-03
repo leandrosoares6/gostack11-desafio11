@@ -5,7 +5,7 @@ import React, {
   useMemo,
   useLayoutEffect,
 } from 'react';
-import { Image } from 'react-native';
+import { Image, Alert } from 'react-native';
 
 import Icon from 'react-native-vector-icons/Feather';
 import MaterialIcon from 'react-native-vector-icons/MaterialIcons';
@@ -73,7 +73,16 @@ const FoodDetails: React.FC = () => {
 
   useEffect(() => {
     async function loadFood(): Promise<void> {
-      // Load a specific food with extras based on routeParams id
+      const responseFood = await api.get(`foods/${routeParams.id}`);
+      setFood(responseFood.data);
+
+      const { data: favorites } = await api.get<Food[]>(`favorites`);
+
+      const checkIsFavorite = favorites.find(
+        favorite => favorite.id === routeParams.id,
+      );
+
+      setIsFavorite(!!checkIsFavorite);
     }
 
     loadFood();
@@ -95,9 +104,29 @@ const FoodDetails: React.FC = () => {
     // Decrement food quantity
   }
 
-  const toggleFavorite = useCallback(() => {
-    // Toggle if food is favorite or not
-  }, [isFavorite, food]);
+  const toggleFavorite = useCallback(async () => {
+    async function addFavorite(): Promise<void> {
+      try {
+        await api.post('favorites', food);
+
+        setIsFavorite(true);
+      } catch (error) {
+        Alert.alert('Houve um erro na conexão. Tente novamente.');
+      }
+    }
+
+    async function deleteFavorite(): Promise<void> {
+      try {
+        await api.delete(`favorites/${food.id}`);
+
+        setIsFavorite(false);
+      } catch (error) {
+        Alert.alert('Houve um erro na conexão. Tente novamente.');
+      }
+    }
+
+    isFavorite ? await deleteFavorite() : await addFavorite();
+  }, [food, isFavorite]);
 
   const cartTotal = useMemo(() => {
     // Calculate cartTotal
