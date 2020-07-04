@@ -68,11 +68,16 @@ const Dashboard: React.FC = () => {
           params = Object.assign(params, { category_like: selectedCategory });
         }
 
-        const response = await api.get('foods', {
+        const { data: foodsData } = await api.get<Food[]>('foods', {
           params,
         });
 
-        setFoods(response.data);
+        setFoods(() =>
+          foodsData.map(food => ({
+            ...food,
+            formattedPrice: formatValue(food.price),
+          })),
+        );
       } catch (error) {
         Alert.alert('Houve um erro na conexão. Tente novamente.');
       }
